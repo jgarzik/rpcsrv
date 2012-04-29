@@ -1,0 +1,8 @@
+
+A multi-threaded JSON-RPC server skeleton, based originally on the
+Boost.Asio "server3" example code.  Currently implements a simple echo
+server (params -> results), but sufficient code exists to support a
+wide range of input and output.
+
+Requires Boost 1.37.0 or later.
+
