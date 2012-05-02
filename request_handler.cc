@@ -21,6 +21,8 @@
 #include "json/json_spirit_writer.h"
 #include "json/json_spirit_utils.h"
 
+#define ARRAYLEN(array)     (sizeof(array)/sizeof((array)[0]))
+
 namespace http {
 namespace server3 {
 
@@ -29,12 +31,74 @@ request_handler::request_handler(const std::string& doc_root)
 {
 }
 
+static bool jrpc_ping(json_spirit::Object &query, json_spirit::Object &result)
+{
+	json_spirit::Value tmpval(true);
+
+	result.push_back(json_spirit::Pair("result", tmpval));
+
+	return true;
+}
+
+static bool jrpc_echo(json_spirit::Object &query, json_spirit::Object &result)
+{
+	json_spirit::Value tmpval;
+
+	tmpval = json_spirit::find_value(query, "params");
+	result.push_back(json_spirit::Pair("result", tmpval));	// may be null
+
+	return true;
+}
+
+struct jrpc_handler {
+	std::string	method;
+	bool		(*actor)(json_spirit::Object &query,
+				 json_spirit::Object &result);
+};
+
+static const struct jrpc_handler rpc_handlers[] =
+{
+	{ "ping", jrpc_ping },
+	{ "echo", jrpc_echo },
+};
+
+static void json_rpc_handler(json_spirit::Object &query,
+			     json_spirit::Object &result)
+{
+	json_spirit::Value tmpval;
+
+	tmpval = json_spirit::find_value(query, "method");
+	if (tmpval.type() != json_spirit::str_type) {
+		result.push_back(json_spirit::Pair("error", "invalid method"));
+		return;
+	}
+
+	unsigned int i = 0;
+	for (; i < ARRAYLEN(rpc_handlers); i++) {
+		if (tmpval.get_str() == rpc_handlers[i].method) {
+			bool rc = rpc_handlers[i].actor(query, result);
+			if (rc)
+				return;
+
+			result.push_back(json_spirit::Pair("error", "RPC failed"));
+			return;
+		}
+	}
+
+	result.push_back(json_spirit::Pair("error", "unknown RPC method"));
+}
+
 void request_handler::handle_request(const request& req, reply& rep,
 				     bool keepalive)
 {
 	// Decode url to path.
 	std::string request_path;
 	if (!url_decode(req.uri, request_path)) {
+		rep = reply::stock_reply(reply::bad_request);
+		return;
+	}
+
+	if (req.method != "GET" && req.method != "POST") {
 		rep = reply::stock_reply(reply::bad_request);
 		return;
 	}
@@ -71,17 +135,8 @@ void request_handler::handle_request(const request& req, reply& rep,
 	tmpval = json_spirit::find_value(query, "id");
 	result.push_back(json_spirit::Pair("id", tmpval));	// may be null
 
-	tmpval = json_spirit::find_value(query, "method");
-	if ((tmpval.type() != json_spirit::str_type) ||
-	    (tmpval.get_str() != "echo")) {
-		result.push_back(json_spirit::Pair("error", "invalid method"));
-		goto do_reply;
-	}
+	json_rpc_handler(query, result);
 
-	tmpval = json_spirit::find_value(query, "params");
-	result.push_back(json_spirit::Pair("result", tmpval));	// may be null
-
-do_reply:
 	// Fill out the reply to be sent to the client.
 	rep.status = reply::ok;
 	rep.content = json_spirit::write(result);
