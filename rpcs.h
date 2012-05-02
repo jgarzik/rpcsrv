@@ -5,7 +5,7 @@
 
 namespace json_rpc {
 
-extern void handler(json_spirit::Object &query, json_spirit::Object &result);
+extern void exec(json_spirit::Object &query, json_spirit::Object &result);
 
 }	// namespace json_rpc
 

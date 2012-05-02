@@ -67,7 +67,7 @@ void request_handler::handle_request(const request& req, reply& rep,
 	json_spirit::Object result;
 	json_spirit::Object query = jv.get_obj();
 
-	json_rpc::handler(query, result);
+	json_rpc::exec(query, result);
 
 	// Fill out the reply to be sent to the client.
 	rep.status = reply::ok;

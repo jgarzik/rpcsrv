@@ -8,7 +8,7 @@
 
 namespace json_rpc {
 
-static bool jrpc_ping(json_spirit::Object &query, json_spirit::Object &result)
+static bool ping(json_spirit::Object &query, json_spirit::Object &result)
 {
 	json_spirit::Value tmpval(true);
 
@@ -17,7 +17,7 @@ static bool jrpc_ping(json_spirit::Object &query, json_spirit::Object &result)
 	return true;
 }
 
-static bool jrpc_echo(json_spirit::Object &query, json_spirit::Object &result)
+static bool echo(json_spirit::Object &query, json_spirit::Object &result)
 {
 	json_spirit::Value tmpval;
 
@@ -27,19 +27,19 @@ static bool jrpc_echo(json_spirit::Object &query, json_spirit::Object &result)
 	return true;
 }
 
-struct jrpc_handler {
+struct handler {
 	std::string	method;
 	bool		(*actor)(json_spirit::Object &query,
 				 json_spirit::Object &result);
 };
 
-static const struct jrpc_handler rpc_handlers[] =
+static const struct handler rpc_handlers[] =
 {
-	{ "ping", jrpc_ping },
-	{ "echo", jrpc_echo },
+	{ "ping", ping },
+	{ "echo", echo },
 };
 
-void handler(json_spirit::Object &query, json_spirit::Object &result)
+void exec(json_spirit::Object &query, json_spirit::Object &result)
 {
 	json_spirit::Value tmpval;
 
@@ -73,5 +73,5 @@ void handler(json_spirit::Object &query, json_spirit::Object &result)
 	result.push_back(json_spirit::Pair("error", "unknown RPC method"));
 }
 
-}	// namespace rpcs
+}	// namespace json_rpc
 
