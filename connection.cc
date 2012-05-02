@@ -78,10 +78,13 @@ void connection::handle_read(const boost::system::error_code& e,
       std::string addrstr = peer.address().to_string();
       ptime now = second_clock::universal_time();
       std::string timestr = to_simple_string(now);
-      printf("%s - - %s \"%s\" %d %lu\n",
+      printf("%s - - %s \"%s %s HTTP/%d.%d\" %d %lu\n",
       	     addrstr.c_str(),
 	     timestr.c_str(),
+	     request_.method.c_str(),
 	     request_.uri.c_str(),
+	     request_.http_version_major,
+	     request_.http_version_minor,
 	     reply_.status,
 	     reply_.content.size());
 
