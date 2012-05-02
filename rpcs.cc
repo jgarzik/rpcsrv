@@ -43,6 +43,15 @@ void handler(json_spirit::Object &query, json_spirit::Object &result)
 {
 	json_spirit::Value tmpval;
 
+	tmpval = json_spirit::find_value(query, "version");
+	if (tmpval.type() != json_spirit::null_type)
+		result.push_back(json_spirit::Pair("version", tmpval));
+	else
+		result.push_back(json_spirit::Pair("version", "1.0"));	// fb to 1.0
+
+	tmpval = json_spirit::find_value(query, "id");
+	result.push_back(json_spirit::Pair("id", tmpval));	// may be null
+
 	tmpval = json_spirit::find_value(query, "method");
 	if (tmpval.type() != json_spirit::str_type) {
 		result.push_back(json_spirit::Pair("error", "invalid method"));

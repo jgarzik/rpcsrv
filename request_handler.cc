@@ -64,18 +64,8 @@ void request_handler::handle_request(const request& req, reply& rep,
 		return;
 	}
 
-	json_spirit::Value tmpval;
 	json_spirit::Object result;
 	json_spirit::Object query = jv.get_obj();
-
-	tmpval = json_spirit::find_value(query, "version");
-	if (tmpval.type() != json_spirit::null_type)
-		result.push_back(json_spirit::Pair("version", tmpval));
-	else
-		result.push_back(json_spirit::Pair("version", "1.0"));	// fb to 1.0
-
-	tmpval = json_spirit::find_value(query, "id");
-	result.push_back(json_spirit::Pair("id", tmpval));	// may be null
 
 	json_rpc::handler(query, result);
 
