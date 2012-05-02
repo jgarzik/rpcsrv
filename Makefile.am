@@ -13,14 +13,18 @@ rpcsrvd_SOURCES = \
 	request.h		\
 	request_handler.h	\
 	request_parser.h	\
+	rpcs.h			\
 	server.h		\
+				\
 	connection.cc		\
 	main.cc			\
 	mime_types.cc		\
 	reply.cc		\
 	request_handler.cc	\
 	request_parser.cc	\
+	rpcs.cc			\
 	server.cc
+
 rpcsrvd_LDFLAGS = $(PTHREAD_CFLAGS)
 rpcsrvd_LDADD = $(PTHREAD_LIBS) -Ljson -ljson_spirit \
 	$(BOOST_LDFLAGS) $(BOOST_SYSTEM_LIB) $(BOOST_THREAD_LIB) \
