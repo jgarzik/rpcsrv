@@ -8,16 +8,17 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include "server.h"
+#include <stdio.h>
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <vector>
+#include "server.h"
 
 namespace http {
 namespace server3 {
 
-server::server(const std::string& address, const std::string& port,
+server::server(const std::string& address, unsigned int port,
     const std::string& doc_root, std::size_t thread_pool_size)
   : thread_pool_size_(thread_pool_size),
     signals_(io_service_),
@@ -36,8 +37,10 @@ server::server(const std::string& address, const std::string& port,
   signals_.async_wait(boost::bind(&server::handle_stop, this));
 
   // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
+  char portstr[32];
+  snprintf(portstr, sizeof(portstr), "%u", port);
   boost::asio::ip::tcp::resolver resolver(io_service_);
-  boost::asio::ip::tcp::resolver::query query(address, port);
+  boost::asio::ip::tcp::resolver::query query(address, portstr);
   boost::asio::ip::tcp::endpoint endpoint = *resolver.resolve(query);
   acceptor_.open(endpoint.protocol());
   acceptor_.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));

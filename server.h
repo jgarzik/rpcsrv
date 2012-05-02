@@ -29,7 +29,7 @@ class server
 public:
   /// Construct the server to listen on the specified TCP address and port, and
   /// serve up files from the given directory.
-  explicit server(const std::string& address, const std::string& port,
+  explicit server(const std::string& address, unsigned int port,
       const std::string& doc_root, std::size_t thread_pool_size);
 
   /// Run the server's io_service loop.

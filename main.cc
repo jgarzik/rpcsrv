@@ -14,36 +14,90 @@
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/program_options.hpp>
 #include "server.h"
 
-int main(int argc, char* argv[])
+using namespace std;
+
+static std::string opt_bind_addr = "0.0.0.0";
+static unsigned int opt_bind_port = 8080;
+static unsigned int opt_n_threads = 10;
+static std::string opt_doc_root = ".";
+
+namespace po = boost::program_options;
+
+static bool parse_cmdline(int ac, char *av[])
+{
+	try {
+		po::options_description desc("Allowed options");
+		desc.add_options()
+			("help", "produce help message")
+
+			("address,a", po::value<std::string>(&opt_bind_addr)->
+				default_value("0.0.0.0"),
+				"TCP bind address")
+
+			("doc-root,d", po::value<std::string>(&opt_doc_root)->
+				default_value("."),
+				"Document root")
+
+			("port,p", po::value<unsigned int>(&opt_bind_port)->
+				default_value(8080),
+				"TCP bind port")
+
+			("threads,t", po::value<unsigned int>(&opt_n_threads)->
+				default_value(10),
+				"Thread pool size")
+
+		;
+
+		po::variables_map vm;		
+		po::store(po::parse_command_line(ac, av, desc), vm);
+		po::notify(vm);	
+
+		if (vm.count("help")) {
+			std::cout << desc << "\n";
+			exit(0);
+		}
+
+	}
+
+	catch (exception& e) {
+		std::cerr << "error: " << e.what() << "\n";
+		return false;
+	}
+	catch (...) {
+		std::cerr << "Exception of unknown type!\n";
+		return false;
+	}
+
+	return true;
+}
+
+int main(int argc, char *argv[])
 {
 	setlocale(LC_ALL, "");
 
-  try
-  {
-    // Check command line arguments.
-    if (argc != 5)
-    {
-      std::cerr << "Usage: http_server <address> <port> <threads> <doc_root>\n";
-      std::cerr << "  For IPv4, try:\n";
-      std::cerr << "    receiver 0.0.0.0 80 1 .\n";
-      std::cerr << "  For IPv6, try:\n";
-      std::cerr << "    receiver 0::0 80 1 .\n";
-      return 1;
-    }
+	if (!parse_cmdline(argc, argv))
+		return 1;
 
-    // Initialise the server.
-    std::size_t num_threads = boost::lexical_cast<std::size_t>(argv[3]);
-    http::server3::server s(argv[1], argv[2], argv[4], num_threads);
+	try
+	{
+		// Initialise the server.
+		std::size_t num_threads =
+			boost::lexical_cast<std::size_t>(opt_n_threads);
 
-    // Run the server until stopped.
-    s.run();
-  }
-  catch (std::exception& e)
-  {
-    std::cerr << "exception: " << e.what() << "\n";
-  }
+		http::server3::server s(opt_bind_addr, opt_bind_port,
+					opt_doc_root, num_threads);
 
-  return 0;
+		// Run the server until stopped.
+		s.run();
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << "exception: " << e.what() << "\n";
+	}
+
+	return 0;
 }
+
