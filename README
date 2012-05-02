@@ -6,3 +6,10 @@ wide range of input and output.
 
 Requires Boost 1.37.0 or later.
 
+Building follows the familiar pattern:
+
+	./autogen.sh	# only if building from git repo
+	./configure
+	make
+	make install
+
