@@ -51,7 +51,7 @@ void base_connection::log_request()
 
 boost::asio::ip::tcp::socket& connection::socket()
 {
-  return socket_;
+	return socket_;
 }
 
 void connection::start()
@@ -71,64 +71,59 @@ void connection::read_more()
 void connection::handle_read(const boost::system::error_code& e,
     std::size_t bytes_transferred)
 {
-  if (!e)
-  {
-    boost::tribool result;
-    boost::tie(result, boost::tuples::ignore) = request_parser_.parse(
-        request_, buffer_.data(), buffer_.data() + bytes_transferred);
+	if (e) {
+	// If an error occurs then no new asynchronous operations are started. This
+	// means that all shared_ptr references to the connection object will
+	// disappear and the object will be destroyed automatically after this
+	// handler returns. The connection class's destructor closes the socket.
+		return;
+	}
 
-    if (result)
-    {
-      keepalive_ = request_.want_keepalive();
+	boost::tribool result;
+	boost::tie(result, boost::tuples::ignore) = request_parser_.parse(
+			request_, buffer_.data(), buffer_.data() + bytes_transferred);
 
-      request_handler_.handle_request(request_, reply_, keepalive_);
-      boost::asio::async_write(socket_, reply_.to_buffers(),
-          strand_.wrap(
-            boost::bind(&connection::handle_write, shared_from_this(),
-              boost::asio::placeholders::error)));
+	if (result) {
+		keepalive_ = request_.want_keepalive();
 
-      log_request();
+		request_handler_.handle_request(request_, reply_, keepalive_);
+		boost::asio::async_write(socket_, reply_.to_buffers(),
+			strand_.wrap(
+				boost::bind(&connection::handle_write, shared_from_this(),
+					boost::asio::placeholders::error)));
 
-      if (keepalive_) {
-	    request_.clear();
-	    reply_.clear();
-	    request_parser_.reset();
-	    read_more();
-      }
-    }
-    else if (!result)
-    {
-      reply_ = reply::stock_reply(reply::bad_request);
-      boost::asio::async_write(socket_, reply_.to_buffers(),
-          strand_.wrap(
-            boost::bind(&connection::handle_write, shared_from_this(),
-              boost::asio::placeholders::error)));
-    }
-    else
-    {
-	read_more();
-    }
-  }
+		log_request();
 
-  // If an error occurs then no new asynchronous operations are started. This
-  // means that all shared_ptr references to the connection object will
-  // disappear and the object will be destroyed automatically after this
-  // handler returns. The connection class's destructor closes the socket.
+		if (keepalive_) {
+			request_.clear();
+			reply_.clear();
+			request_parser_.reset();
+			read_more();
+		}
+	} else if (!result) {
+		reply_ = reply::stock_reply(reply::bad_request);
+		boost::asio::async_write(socket_, reply_.to_buffers(),
+			strand_.wrap(
+				boost::bind(&connection::handle_write, shared_from_this(),
+					boost::asio::placeholders::error)));
+	} else {
+		read_more();
+	}
 }
 
 void connection::handle_write(const boost::system::error_code& e)
 {
-  if (!e && !keepalive_)
-  {
-    // Initiate graceful connection closure.
-    boost::system::error_code ignored_ec;
-    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
-  }
+	if (!e && !keepalive_)
+	{
+		// Initiate graceful connection closure.
+		boost::system::error_code ignored_ec;
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+	}
 
-  // No new asynchronous operations are started. This means that all shared_ptr
-  // references to the connection object will disappear and the object will be
-  // destroyed automatically after this handler returns. The connection class's
-  // destructor closes the socket.
+// No new asynchronous operations are started. This means that all shared_ptr
+// references to the connection object will disappear and the object will be
+// destroyed automatically after this handler returns. The connection class's
+// destructor closes the socket.
 }
 
 void ssl_connection::start()
@@ -156,67 +151,60 @@ void ssl_connection::handle_handshake(const boost::system::error_code& e)
 void ssl_connection::handle_read(const boost::system::error_code& e,
     std::size_t bytes_transferred)
 {
-  using namespace boost::posix_time;
-  using namespace boost::gregorian;
-
-  if (!e)
-  {
-    boost::tribool result;
-    boost::tie(result, boost::tuples::ignore) = request_parser_.parse(
-        request_, buffer_.data(), buffer_.data() + bytes_transferred);
-
-    if (result)
-    {
-      keepalive_ = request_.want_keepalive();
-
-      request_handler_.handle_request(request_, reply_, keepalive_);
-      boost::asio::async_write(socket_, reply_.to_buffers(),
-          strand_.wrap(
-            boost::bind(&ssl_connection::handle_write, shared_from_this(),
-              boost::asio::placeholders::error)));
-
-      log_request();
-
-      if (keepalive_) {
-	    request_.clear();
-	    reply_.clear();
-	    request_parser_.reset();
-	    read_more();
-      }
-    }
-    else if (!result)
-    {
-      reply_ = reply::stock_reply(reply::bad_request);
-      boost::asio::async_write(socket_, reply_.to_buffers(),
-          strand_.wrap(
-            boost::bind(&ssl_connection::handle_write, shared_from_this(),
-              boost::asio::placeholders::error)));
-    }
-    else
-    {
-    	read_more();
-    }
-  }
-
+	if (e) {
   // If an error occurs then no new asynchronous operations are started. This
   // means that all shared_ptr references to the connection object will
   // disappear and the object will be destroyed automatically after this
   // handler returns. The connection class's destructor closes the socket.
+		return;
+	}
+
+	boost::tribool result;
+	boost::tie(result, boost::tuples::ignore) = request_parser_.parse(
+			request_, buffer_.data(), buffer_.data() + bytes_transferred);
+
+	if (result)
+	{
+		keepalive_ = request_.want_keepalive();
+
+		request_handler_.handle_request(request_, reply_, keepalive_);
+		boost::asio::async_write(socket_, reply_.to_buffers(),
+			strand_.wrap(
+				boost::bind(&ssl_connection::handle_write, shared_from_this(),
+					boost::asio::placeholders::error)));
+
+		log_request();
+
+		if (keepalive_) {
+			request_.clear();
+			reply_.clear();
+			request_parser_.reset();
+			read_more();
+		}
+	} else if (!result) {
+		reply_ = reply::stock_reply(reply::bad_request);
+		boost::asio::async_write(socket_, reply_.to_buffers(),
+			strand_.wrap(
+				boost::bind(&ssl_connection::handle_write, shared_from_this(),
+					boost::asio::placeholders::error)));
+	} else {
+		read_more();
+	}
 }
 
 void ssl_connection::handle_write(const boost::system::error_code& e)
 {
-  if (!e && !keepalive_)
-  {
-    // Initiate graceful connection closure.
-    boost::system::error_code ignored_ec;
-    socket_.shutdown(ignored_ec);
-  }
+	if (!e && !keepalive_)
+	{
+		// Initiate graceful connection closure.
+		boost::system::error_code ignored_ec;
+		socket_.shutdown(ignored_ec);
+	}
 
-  // No new asynchronous operations are started. This means that all shared_ptr
-  // references to the connection object will disappear and the object will be
-  // destroyed automatically after this handler returns. The connection class's
-  // destructor closes the socket.
+// No new asynchronous operations are started. This means that all shared_ptr
+// references to the connection object will disappear and the object will be
+// destroyed automatically after this handler returns. The connection class's
+// destructor closes the socket.
 }
 
 } // namespace server3
