@@ -14,6 +14,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/algorithm/string.hpp>
 #include "header.h"
 
 namespace http {
@@ -51,13 +52,16 @@ struct request
 	bool want_keepalive() {
 		bool rc = false;
 		if ((http_version_major > 1) ||
-		    ((http_version_major == 1) && (http_version_minor > 0))) {
+		    ((http_version_major == 1) && (http_version_minor > 0)))
 			rc = true;
 
-			std::string cxn_hdr = get_header("connection");
-			if (cxn_hdr == "close")
-				rc = false;
-		}
+		std::string cxn_hdr =
+			boost::to_lower_copy(get_header("connection"));
+
+		if (cxn_hdr == "close")
+			rc = false;
+		else if (cxn_hdr == "keep-alive")
+			rc = true;
 
 		return rc;
 	}

@@ -77,7 +77,9 @@ void request_handler::handle_request(const request& req, reply& rep,
 	rep.headers.push_back(header("Content-Length",
 			boost::lexical_cast<std::string>(rep.content.size())));
 	rep.headers.push_back(header("Content-Type", "application/json"));
-	if (!keepalive)
+	if (keepalive)
+		rep.headers.push_back(header("Connection", "Keep-Alive"));
+	else
 		rep.headers.push_back(header("Connection", "close"));
 }
 
