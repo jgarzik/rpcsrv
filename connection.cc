@@ -87,16 +87,7 @@ void connection::handle_read(const boost::system::error_code& e,
 
     if (result)
     {
-      keepalive_ = false;
-      if ((request_.http_version_major > 1) ||
-          ((request_.http_version_major == 1) &&
-	   (request_.http_version_minor > 0))) {
-      	keepalive_ = true;
-
-	std::string cxn_hdr = request_.get_header("connection");
-	if (cxn_hdr == "close")
-		keepalive_ = false;
-      }
+      keepalive_ = request_.want_keepalive();
 
       request_handler_.handle_request(request_, reply_, keepalive_);
       boost::asio::async_write(socket_, reply_.to_buffers(),
@@ -211,16 +202,7 @@ void ssl_connection::handle_read(const boost::system::error_code& e,
 
     if (result)
     {
-      keepalive_ = false;
-      if ((request_.http_version_major > 1) ||
-          ((request_.http_version_major == 1) &&
-	   (request_.http_version_minor > 0))) {
-      	keepalive_ = true;
-
-	std::string cxn_hdr = request_.get_header("connection");
-	if (cxn_hdr == "close")
-		keepalive_ = false;
-      }
+      keepalive_ = request_.want_keepalive();
 
       request_handler_.handle_request(request_, reply_, keepalive_);
       boost::asio::async_write(socket_, reply_.to_buffers(),
