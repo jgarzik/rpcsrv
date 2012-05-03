@@ -10,10 +10,11 @@
 //
 
 #include <stdio.h>
-#include "connection.h"
+#include <sstream>
 #include <vector>
 #include <boost/bind.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include "connection.h"
 #include "reply.h"
 #include "request_handler.h"
 
@@ -40,6 +41,18 @@ void connection::start()
         boost::bind(&connection::handle_read, shared_from_this(),
           boost::asio::placeholders::error,
           boost::asio::placeholders::bytes_transferred)));
+}
+
+
+std::string FormatTime(boost::posix_time::ptime now)
+{
+	static std::locale loc(std::cout.getloc(),
+		new boost::posix_time::time_facet("%d/%b/%Y:%H:%M:%S"));
+
+	std::stringstream ss;
+	ss.imbue(loc);
+	ss << now;
+	return ss.str();
 }
 
 void connection::handle_read(const boost::system::error_code& e,
@@ -76,9 +89,8 @@ void connection::handle_read(const boost::system::error_code& e,
               boost::asio::placeholders::error)));
 
       std::string addrstr = peer.address().to_string();
-      ptime now = second_clock::universal_time();
-      std::string timestr = to_simple_string(now);
-      printf("%s - - %s \"%s %s HTTP/%d.%d\" %d %lu\n",
+      std::string timestr = FormatTime(second_clock::universal_time());
+      printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
       	     addrstr.c_str(),
 	     timestr.c_str(),
 	     request_.method.c_str(),
