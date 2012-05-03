@@ -11,9 +11,10 @@
 #ifndef HTTP_SERVER3_SERVER_HPP
 #define HTTP_SERVER3_SERVER_HPP
 
-#include <boost/asio.hpp>
 #include <string>
 #include <vector>
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include "connection.h"
@@ -57,8 +58,12 @@ private:
   /// Acceptor used to listen for incoming connections.
   boost::asio::ip::tcp::acceptor acceptor_;
 
+  /// SSL context
+  boost::asio::ssl::context context_;
+
   /// The next connection to be accepted.
   connection_ptr new_connection_;
+  ssl_conn_ptr new_ssl_conn_;
 
   /// The handler for all incoming requests.
   request_handler request_handler_;

@@ -47,6 +47,7 @@ dnl Checks for required libraries
 dnl -----------------------------
 
 AX_PTHREAD
+AX_CHECK_OPENSSL
 AX_BOOST_BASE(1.37.0)
 AX_BOOST_SYSTEM
 AX_BOOST_THREAD

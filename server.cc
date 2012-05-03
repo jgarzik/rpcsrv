@@ -15,6 +15,9 @@
 #include <vector>
 #include "server.h"
 
+extern std::string opt_ssl_pemfile;
+extern bool use_ssl;
+
 namespace http {
 namespace server3 {
 
@@ -23,6 +26,7 @@ server::server(const std::string& address, unsigned int port,
   : thread_pool_size_(thread_pool_size),
     signals_(io_service_),
     acceptor_(io_service_),
+    context_(boost::asio::ssl::context::tlsv1),
     new_connection_(),
     request_handler_(doc_root)
 {
@@ -35,6 +39,11 @@ server::server(const std::string& address, unsigned int port,
   signals_.add(SIGQUIT);
 #endif // defined(SIGQUIT)
   signals_.async_wait(boost::bind(&server::handle_stop, this));
+
+  if (use_ssl) {
+    context_.use_certificate_chain_file(opt_ssl_pemfile);
+    context_.use_private_key_file(opt_ssl_pemfile, boost::asio::ssl::context::pem);
+  }
 
   // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
   char portstr[32];
@@ -68,25 +77,35 @@ void server::run()
 
 void server::start_accept()
 {
-  new_connection_.reset(new connection(io_service_, request_handler_));
-  acceptor_.async_accept(new_connection_->socket(), new_connection_->peer,
-      boost::bind(&server::handle_accept, this,
-        boost::asio::placeholders::error));
+	if (use_ssl) {
+		new_ssl_conn_.reset(new ssl_connection(io_service_, context_, request_handler_));
+		acceptor_.async_accept(new_ssl_conn_->socket(), new_ssl_conn_->peer,
+		    boost::bind(&server::handle_accept, this,
+		      boost::asio::placeholders::error));
+	} else {
+		new_connection_.reset(new connection(io_service_, request_handler_));
+		acceptor_.async_accept(new_connection_->socket(), new_connection_->peer,
+		    boost::bind(&server::handle_accept, this,
+		      boost::asio::placeholders::error));
+	}
 }
 
 void server::handle_accept(const boost::system::error_code& e)
 {
-  if (!e)
-  {
-    new_connection_->start();
-  }
+	if (!e)
+	{
+		if (use_ssl)
+			new_ssl_conn_->start();
+		else
+			new_connection_->start();
+	}
 
-  start_accept();
+	start_accept();
 }
 
 void server::handle_stop()
 {
-  io_service_.stop();
+	io_service_.stop();
 }
 
 } // namespace server3

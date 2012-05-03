@@ -23,6 +23,8 @@ static std::string opt_bind_addr = "0.0.0.0";
 static unsigned int opt_bind_port = 8080;
 static unsigned int opt_n_threads = 10;
 static std::string opt_doc_root = ".";
+std::string opt_ssl_pemfile;
+bool use_ssl = false;
 
 namespace po = boost::program_options;
 
@@ -44,6 +46,9 @@ static bool parse_cmdline(int ac, char *av[])
 			("port,p", po::value<unsigned int>(&opt_bind_port)->
 				default_value(8080),
 				"TCP bind port")
+
+			("pem", po::value<std::string>(&opt_ssl_pemfile),
+				"SSL private key, etc.")
 
 			("threads,t", po::value<unsigned int>(&opt_n_threads)->
 				default_value(10),
@@ -70,6 +75,9 @@ static bool parse_cmdline(int ac, char *av[])
 		std::cerr << "Exception of unknown type!\n";
 		return false;
 	}
+
+	if (opt_ssl_pemfile.length() > 0)
+		use_ssl = true;
 
 	return true;
 }

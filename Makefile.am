@@ -25,8 +25,11 @@ rpcsrvd_SOURCES = \
 	rpcs.cc			\
 	server.cc
 
-rpcsrvd_LDFLAGS = $(PTHREAD_CFLAGS)
-rpcsrvd_LDADD = $(PTHREAD_LIBS) -Ljson -ljson_spirit \
+rpcsrvd_LDFLAGS = $(PTHREAD_CFLAGS) $(OPENSSL_LDFLAGS)
+rpcsrvd_LDADD = \
+	$(PTHREAD_LIBS)		\
+	-Ljson -ljson_spirit	\
+	$(OPENSSL_LIBS)		\
 	$(BOOST_LDFLAGS) $(BOOST_SYSTEM_LIB) $(BOOST_THREAD_LIB) \
 	$(BOOST_DATE_TIME_LIB) $(BOOST_PROGRAM_OPTIONS_LIB)
 
