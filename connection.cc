@@ -31,12 +31,22 @@ std::string FormatTime(boost::posix_time::ptime now)
 	return ss.str();
 }
 
-connection::connection(boost::asio::io_service& io_service,
-    request_handler& handler)
-  : strand_(io_service),
-    socket_(io_service),
-    request_handler_(handler)
+void base_connection::log_request()
 {
+	using namespace boost::posix_time;
+	using namespace boost::gregorian;
+
+	std::string addrstr = peer.address().to_string();
+	std::string timestr = FormatTime(second_clock::universal_time());
+	printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
+      	     addrstr.c_str(),
+	     timestr.c_str(),
+	     request_.method.c_str(),
+	     request_.uri.c_str(),
+	     request_.http_version_major,
+	     request_.http_version_minor,
+	     reply_.status,
+	     reply_.content.size());
 }
 
 boost::asio::ip::tcp::socket& connection::socket()
@@ -56,24 +66,6 @@ void connection::read_more()
 	      boost::bind(&connection::handle_read, shared_from_this(),
 	        boost::asio::placeholders::error,
 	        boost::asio::placeholders::bytes_transferred)));
-}
-
-void connection::log_request()
-{
-	using namespace boost::posix_time;
-	using namespace boost::gregorian;
-
-	std::string addrstr = peer.address().to_string();
-	std::string timestr = FormatTime(second_clock::universal_time());
-	printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
-      	     addrstr.c_str(),
-	     timestr.c_str(),
-	     request_.method.c_str(),
-	     request_.uri.c_str(),
-	     request_.http_version_major,
-	     request_.http_version_minor,
-	     reply_.status,
-	     reply_.content.size());
 }
 
 void connection::handle_read(const boost::system::error_code& e,
@@ -139,15 +131,6 @@ void connection::handle_write(const boost::system::error_code& e)
   // destructor closes the socket.
 }
 
-ssl_connection::ssl_connection(boost::asio::io_service& io_service,
-				boost::asio::ssl::context& context,
-				request_handler& handler)
-  : strand_(io_service),
-    socket_(io_service, context),
-    request_handler_(handler)
-{
-}
-
 void ssl_connection::start()
 {
 	socket_.async_handshake(boost::asio::ssl::stream_base::server,
@@ -168,24 +151,6 @@ void ssl_connection::handle_handshake(const boost::system::error_code& e)
 {
 	if (!e)
 		read_more();
-}
-
-void ssl_connection::log_request()
-{
-	using namespace boost::posix_time;
-	using namespace boost::gregorian;
-
-	std::string addrstr = peer.address().to_string();
-	std::string timestr = FormatTime(second_clock::universal_time());
-	printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
-      	     addrstr.c_str(),
-	     timestr.c_str(),
-	     request_.method.c_str(),
-	     request_.uri.c_str(),
-	     request_.http_version_major,
-	     request_.http_version_minor,
-	     reply_.status,
-	     reply_.content.size());
 }
 
 void ssl_connection::handle_read(const boost::system::error_code& e,
