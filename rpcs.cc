@@ -1,4 +1,8 @@
 
+//
+// Copyright 2012 Red Hat, Inc.
+//
+
 #include "json/json_spirit_reader.h"
 #include "json/json_spirit_writer.h"
 #include "json/json_spirit_utils.h"

@@ -1,3 +1,8 @@
+
+//
+// Copyright 2012 Red Hat, Inc.
+//
+
 #ifndef __RPCS_H__
 #define __RPCS_H__
 
