@@ -20,6 +20,17 @@
 namespace http {
 namespace server3 {
 
+std::string FormatTime(boost::posix_time::ptime now)
+{
+	static std::locale loc(std::cout.getloc(),
+		new boost::posix_time::time_facet("%d/%b/%Y:%H:%M:%S"));
+
+	std::stringstream ss;
+	ss.imbue(loc);
+	ss << now;
+	return ss.str();
+}
+
 connection::connection(boost::asio::io_service& io_service,
     request_handler& handler)
   : strand_(io_service),
@@ -47,23 +58,27 @@ void connection::read_more()
 	        boost::asio::placeholders::bytes_transferred)));
 }
 
-std::string FormatTime(boost::posix_time::ptime now)
+void connection::log_request()
 {
-	static std::locale loc(std::cout.getloc(),
-		new boost::posix_time::time_facet("%d/%b/%Y:%H:%M:%S"));
+	using namespace boost::posix_time;
+	using namespace boost::gregorian;
 
-	std::stringstream ss;
-	ss.imbue(loc);
-	ss << now;
-	return ss.str();
+	std::string addrstr = peer.address().to_string();
+	std::string timestr = FormatTime(second_clock::universal_time());
+	printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
+      	     addrstr.c_str(),
+	     timestr.c_str(),
+	     request_.method.c_str(),
+	     request_.uri.c_str(),
+	     request_.http_version_major,
+	     request_.http_version_minor,
+	     reply_.status,
+	     reply_.content.size());
 }
 
 void connection::handle_read(const boost::system::error_code& e,
     std::size_t bytes_transferred)
 {
-  using namespace boost::posix_time;
-  using namespace boost::gregorian;
-
   if (!e)
   {
     boost::tribool result;
@@ -89,17 +104,7 @@ void connection::handle_read(const boost::system::error_code& e,
             boost::bind(&connection::handle_write, shared_from_this(),
               boost::asio::placeholders::error)));
 
-      std::string addrstr = peer.address().to_string();
-      std::string timestr = FormatTime(second_clock::universal_time());
-      printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
-      	     addrstr.c_str(),
-	     timestr.c_str(),
-	     request_.method.c_str(),
-	     request_.uri.c_str(),
-	     request_.http_version_major,
-	     request_.http_version_minor,
-	     reply_.status,
-	     reply_.content.size());
+      log_request();
 
       if (keepalive_) {
 	    request_.clear();
@@ -174,6 +179,24 @@ void ssl_connection::handle_handshake(const boost::system::error_code& e)
 		read_more();
 }
 
+void ssl_connection::log_request()
+{
+	using namespace boost::posix_time;
+	using namespace boost::gregorian;
+
+	std::string addrstr = peer.address().to_string();
+	std::string timestr = FormatTime(second_clock::universal_time());
+	printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
+      	     addrstr.c_str(),
+	     timestr.c_str(),
+	     request_.method.c_str(),
+	     request_.uri.c_str(),
+	     request_.http_version_major,
+	     request_.http_version_minor,
+	     reply_.status,
+	     reply_.content.size());
+}
+
 void ssl_connection::handle_read(const boost::system::error_code& e,
     std::size_t bytes_transferred)
 {
@@ -205,17 +228,7 @@ void ssl_connection::handle_read(const boost::system::error_code& e,
             boost::bind(&ssl_connection::handle_write, shared_from_this(),
               boost::asio::placeholders::error)));
 
-      std::string addrstr = peer.address().to_string();
-      std::string timestr = FormatTime(second_clock::universal_time());
-      printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
-      	     addrstr.c_str(),
-	     timestr.c_str(),
-	     request_.method.c_str(),
-	     request_.uri.c_str(),
-	     request_.http_version_major,
-	     request_.http_version_minor,
-	     reply_.status,
-	     reply_.content.size());
+      log_request();
 
       if (keepalive_) {
 	    request_.clear();

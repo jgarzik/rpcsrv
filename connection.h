@@ -46,6 +46,7 @@ public:
 	boost::asio::ip::tcp::endpoint peer;
 
 private:
+	/// Initiate asynchronous read
 	void read_more();
 
 	/// Handle completion of a read operation.
@@ -54,6 +55,9 @@ private:
 
 	/// Handle completion of a write operation.
 	void handle_write(const boost::system::error_code& e);
+
+	/// Log HTTP request
+	void log_request();
 
 	/// Strand to ensure the connection's handlers are not called concurrently.
 	boost::asio::io_service::strand strand_;
@@ -102,6 +106,7 @@ public:
 	boost::asio::ip::tcp::endpoint peer;
 
 private:
+	/// Initiate asynchronous read
 	void read_more();
 
 	/// Handle completion of a read operation.
@@ -113,6 +118,9 @@ private:
 
 	/// Handle completion of a handshake operation.
 	void handle_handshake(const boost::system::error_code& e);
+
+	/// Log HTTP request
+	void log_request();
 
 	/// Strand to ensure the connection handlers not called concurrently.
 	boost::asio::io_service::strand strand_;
