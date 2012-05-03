@@ -19,15 +19,15 @@ namespace server3 {
 
 struct header
 {
-  std::string name;
-  std::string value;
+	std::string name;
+	std::string value;
 
-  header() { }
+	header() { }
 
-  header(std::string name_, std::string value_) {
-  	name = name_;
-	value = value_;
-  }
+	header(std::string name_, std::string value_) {
+		name = name_;
+		value = value_;
+	}
 };
 
 } // namespace server3
