@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include "header.h"
 
 namespace http {
@@ -29,6 +30,7 @@ struct request
 	int			http_version_minor;
 	std::vector<header>	headers;
 	std::string		content;
+	boost::posix_time::ptime tstamp;
 
 	void clear() {
 		method.clear();

@@ -9,7 +9,7 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include "request_handler.h"
+#include "rpcsrv-config.h"
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -17,6 +17,7 @@
 #include "mime_types.h"
 #include "reply.h"
 #include "request.h"
+#include "request_handler.h"
 #include "json/json_spirit_reader.h"
 #include "json/json_spirit_writer.h"
 #include "json/json_spirit_utils.h"
@@ -24,6 +25,8 @@
 
 namespace http {
 namespace server3 {
+
+extern std::string FormatTime(std::string fmt, boost::posix_time::ptime now);
 
 request_handler::request_handler(const std::string& doc_root)
   : doc_root_(doc_root)
@@ -74,6 +77,10 @@ void request_handler::handle_request(const request& req, reply& rep,
 	rep.content = json_spirit::write(result);
 	rep.content += "\r\n";
 
+	rep.headers.push_back(header("Date",
+		FormatTime("%a, %d %b %Y %H:%M:%S GMT", req.tstamp)));
+	rep.headers.push_back(header(
+		"Server", PACKAGE_NAME "/" PACKAGE_VERSION));
 	rep.headers.push_back(header("Content-Length",
 			boost::lexical_cast<std::string>(rep.content.size())));
 	rep.headers.push_back(header("Content-Type", "application/json"));

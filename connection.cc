@@ -20,10 +20,10 @@
 namespace http {
 namespace server3 {
 
-std::string FormatTime(boost::posix_time::ptime now)
+std::string FormatTime(std::string fmt, boost::posix_time::ptime now)
 {
 	static std::locale loc(std::cout.getloc(),
-		new boost::posix_time::time_facet("%d/%b/%Y:%H:%M:%S"));
+		new boost::posix_time::time_facet(fmt.c_str()));
 
 	std::stringstream ss;
 	ss.imbue(loc);
@@ -37,7 +37,7 @@ void base_connection::log_request()
 	using namespace boost::gregorian;
 
 	std::string addrstr = peer.address().to_string();
-	std::string timestr = FormatTime(second_clock::universal_time());
+	std::string timestr = FormatTime("%d/%b/%Y:%H:%M:%S", request_.tstamp);
 	printf("%s - - [%s -0000] \"%s %s HTTP/%d.%d\" %d %lu\n",
       	     addrstr.c_str(),
 	     timestr.c_str(),
@@ -85,6 +85,8 @@ void connection::handle_read(const boost::system::error_code& e,
 
 	if (result) {
 		keepalive_ = request_.want_keepalive();
+		request_.tstamp =
+			boost::posix_time::second_clock::universal_time();
 
 		request_handler_.handle_request(request_, reply_, keepalive_);
 		boost::asio::async_write(socket_, reply_.to_buffers(),
