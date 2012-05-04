@@ -168,6 +168,8 @@ void ssl_connection::handle_read(const boost::system::error_code& e,
 	if (result)
 	{
 		keepalive_ = request_.want_keepalive();
+		request_.tstamp =
+			boost::posix_time::second_clock::universal_time();
 
 		request_handler_.handle_request(request_, reply_, keepalive_);
 		boost::asio::async_write(socket_, reply_.to_buffers(),
