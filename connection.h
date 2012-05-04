@@ -64,6 +64,13 @@ protected:
 
 	/// HTTP/1.1 keepalive enabled?
 	bool keepalive_;
+
+	void reset()
+	{
+		request_.clear();
+		reply_.clear();
+		request_parser_.reset();
+	}
 };
 
 /// Represents a single connection from a client.

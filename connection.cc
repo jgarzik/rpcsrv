@@ -97,9 +97,7 @@ void connection::handle_read(const boost::system::error_code& e,
 		log_request();
 
 		if (keepalive_) {
-			request_.clear();
-			reply_.clear();
-			request_parser_.reset();
+			reset();
 			read_more();
 		}
 	} else if (!result) {
@@ -180,9 +178,7 @@ void ssl_connection::handle_read(const boost::system::error_code& e,
 		log_request();
 
 		if (keepalive_) {
-			request_.clear();
-			reply_.clear();
-			request_parser_.reset();
+			reset();
 			read_more();
 		}
 	} else if (!result) {
