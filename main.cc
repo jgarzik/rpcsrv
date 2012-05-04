@@ -49,7 +49,7 @@ static bool parse_cmdline(int ac, char *av[])
 				"TCP bind port")
 
 			("pem", po::value<std::string>(&opt_ssl_pemfile),
-				"SSL private key, etc.")
+				"SSL private key and cert file.  Switches server from HTTP to HTTPS protocol.")
 
 			("threads,t", po::value<unsigned int>(&opt_n_threads)->
 				default_value(10),

@@ -1,8 +1,9 @@
 
 A multi-threaded JSON-RPC server skeleton, based originally on the
-Boost.Asio "server3" example code.  Currently implements a simple echo
-server (params -> results), but sufficient code exists to support a
-wide range of input and output.
+Boost.Asio "server3" example code.  Currently implements two simple
+JSON-RPC methods, "ping" (always returns true) and "echo" (echoes
+params back as the result), but sufficient code exists to support a
+wide range of RPC methods, inputs and outputs.
 
 Requires Boost 1.37.0 or later.
 
@@ -12,4 +13,7 @@ Building follows the familiar pattern:
 	./configure
 	make
 	make install
+
+Run "./rpcsrvd --help" for a summary of server configuration options,
+and their default values.
 
