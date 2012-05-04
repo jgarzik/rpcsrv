@@ -49,11 +49,16 @@ struct request
 		return "";
 	}
 
-	bool want_keepalive() {
-		bool rc = false;
+	bool is_http11() const {
 		if ((http_version_major > 1) ||
 		    ((http_version_major == 1) && (http_version_minor > 0)))
-			rc = true;
+			return true;
+
+		return false;
+	}
+
+	bool want_keepalive() {
+		bool rc = is_http11();
 
 		std::string cxn_hdr =
 			boost::to_lower_copy(get_header("connection"));
