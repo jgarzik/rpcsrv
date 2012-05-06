@@ -96,10 +96,6 @@ void connection::handle_read(const boost::system::error_code& e,
 
 		log_request();
 
-		if (keepalive_) {
-			reset();
-			read_more();
-		}
 	} else if (!result) {
 		reply_ = reply::stock_reply(reply::bad_request);
 		boost::asio::async_write(socket_, reply_.to_buffers(),
@@ -113,17 +109,22 @@ void connection::handle_read(const boost::system::error_code& e,
 
 void connection::handle_write(const boost::system::error_code& e)
 {
-	if (!e && !keepalive_)
-	{
-		// Initiate graceful connection closure.
-		boost::system::error_code ignored_ec;
-		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
-	}
-
+	if (e) {
 // No new asynchronous operations are started. This means that all shared_ptr
 // references to the connection object will disappear and the object will be
 // destroyed automatically after this handler returns. The connection class's
 // destructor closes the socket.
+		return;
+	}
+
+	if (keepalive_) {
+		reset();
+		read_more();
+	} else {
+		// Initiate graceful connection closure.
+		boost::system::error_code ignored_ec;
+		socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+	}
 }
 
 void ssl_connection::start()
@@ -177,10 +178,6 @@ void ssl_connection::handle_read(const boost::system::error_code& e,
 
 		log_request();
 
-		if (keepalive_) {
-			reset();
-			read_more();
-		}
 	} else if (!result) {
 		reply_ = reply::stock_reply(reply::bad_request);
 		boost::asio::async_write(socket_, reply_.to_buffers(),
@@ -194,17 +191,22 @@ void ssl_connection::handle_read(const boost::system::error_code& e,
 
 void ssl_connection::handle_write(const boost::system::error_code& e)
 {
-	if (!e && !keepalive_)
-	{
-		// Initiate graceful connection closure.
-		boost::system::error_code ignored_ec;
-		socket_.shutdown(ignored_ec);
-	}
-
+	if (e) {
 // No new asynchronous operations are started. This means that all shared_ptr
 // references to the connection object will disappear and the object will be
 // destroyed automatically after this handler returns. The connection class's
 // destructor closes the socket.
+		return;
+	}
+
+	if (keepalive_) {
+		reset();
+		read_more();
+	} else {
+		// Initiate graceful connection closure.
+		boost::system::error_code ignored_ec;
+		socket_.shutdown(ignored_ec);
+	}
 }
 
 } // namespace server3
