@@ -17,6 +17,7 @@ configure
 depcomp
 install-sh
 missing
+compile
 push
 stamp-h1
 
