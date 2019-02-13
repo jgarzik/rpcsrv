@@ -10,7 +10,8 @@ EXTRA_DIST = \
 sbin_PROGRAMS = rpcsrvd
 
 rpcsrvd_SOURCES = \
-	src/rpcsrv.cc \
+	src/endpoints.cc \
+	src/server.h src/server.cc \
 	src/util.h src/util.cc
 
 rpcsrvd_LDFLAGS = $(PTHREAD_CFLAGS) $(OPENSSL_LDFLAGS)

@@ -19,7 +19,7 @@ dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 AC_PREREQ(2.60)
 AC_INIT(rpcsrv, 1.0.0, [Jeff Garzik <jgarzik@pobox.com>])
-AC_CONFIG_SRCDIR([src/rpcsrv.cc])
+AC_CONFIG_SRCDIR([src/server.cc])
 AC_CONFIG_HEADERS([rpcsrv-config.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([build-aux/m4])
