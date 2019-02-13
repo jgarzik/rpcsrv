@@ -9,6 +9,7 @@
 #include <string>
 #include <argp.h>
 #include <iostream>
+#include <cstdio>
 #include <unistd.h>
 #include <syslog.h>
 #include <event2/event.h>
@@ -28,6 +29,7 @@ static bool opt_daemon = false;
 static struct event_base *eb = NULL;
 static string listenAddr = DEFAULT_LISTEN_ADDR;
 static unsigned short listenPort = DEFAULT_LISTEN_PORT;
+static UniValue progCfg;
 
 /* Command line arguments and processing */
 const char *argp_program_version =
@@ -42,6 +44,9 @@ static char doc[] =
 	"RPC daemon\n";
 
 static struct argp_option options[] = {
+	{ "config", 'c', "JSON-FILE", 0,
+	  "Read JSON configuration from FILE." },
+
 	{ "daemon", 1002, NULL, 0,
 	  "Daemonize; run server in background." },
 
@@ -63,6 +68,26 @@ static struct argp_option options[] = {
 static error_t parse_opt (int key, char *arg, struct argp_state *state)
 {
 	switch(key) {
+	case 'c': {
+		string body;
+		FILE *f = fopen(arg, "r");
+		if (f) {
+			char line[1024];
+			char *l;
+			while ((l = fgets(line, sizeof(line), f)) != nullptr) {
+				body.append(l);
+			} 
+			fclose(f);
+		}
+		break;
+
+		if (!progCfg.read(body)) {
+			fprintf(stderr, "Invalid JSON configuration file %s\n",
+				arg);
+			return ARGP_ERR_UNKNOWN;
+		}
+	}
+
 	case 'p':
 		opt_pid_file = arg;
 		break;

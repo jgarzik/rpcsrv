@@ -1,6 +1,10 @@
 
 AM_CPPFLAGS = $(PTHREAD_CFLAGS)
 
+EXTRA_DIST = \
+	README.md \
+	example-config.json
+
 sbin_PROGRAMS = rpcsrvd
 
 rpcsrvd_SOURCES = \
