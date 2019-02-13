@@ -49,8 +49,10 @@ static struct argp_option options[] = {
 	{ "config", 'c', "JSON-FILE", 0,
 	  "Read JSON configuration from FILE." },
 
+#if 0	// fixme: broken
 	{ "daemon", 1002, NULL, 0,
 	  "Daemonize; run server in background." },
+#endif
 
 	{ "listen-addr", 1003, "ADDRESS", 0,
 	  "Listen address (default: " DEFAULT_LISTEN_ADDR ")" },
@@ -140,8 +142,10 @@ static void shutdown_signal(int signo)
 
 static bool apply_json_config()
 {
+#if 0	// fixme: broken
 	if (progCfg.exists("daemon"))
 		opt_daemon = progCfg["daemon"].get_bool();
+#endif
 	if (progCfg.exists("json-indent"))
 		opt_json_indent = progCfg["json-indent"].get_int();
 	if (progCfg.exists("listen-port"))
@@ -180,11 +184,11 @@ int main(int argc, char *argv[])
 	// HTTP server URI callbacks
 	evhttp_set_allowed_methods(Server.get(),
 		EVHTTP_REQ_GET | EVHTTP_REQ_POST);
-	evhttp_set_cb(Server.get(), "/", rpc_home, nullptr);
-	evhttp_set_cb(Server.get(), "/rpc/1", rpc_jsonrpc, nullptr);
+	if (!register_endpoints(Server.get()))
+		return EXIT_FAILURE;
 	evhttp_set_gencb(Server.get(), rpc_unknown, nullptr);
 
-	openlog("rpcsrv", LOG_PID, LOG_DAEMON);
+	openlog("rpcsrv", LOG_PID | LOG_PERROR, LOG_DAEMON);
 
 	// Process auto-cleanup
 	signal(SIGTERM, shutdown_signal);

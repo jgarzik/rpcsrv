@@ -91,7 +91,7 @@ void send_json_response(evhttp_request *req, const UniValue& rv)
 // server information, to enable crawlers and server discovery on
 // the network, describing the services exported by this server.
 //
-void rpc_home(evhttp_request *req, void *)
+static void rpc_home(evhttp_request *req, void *)
 {
 	// return an array of services at this server
 	UniValue rv(UniValue::VARR);
@@ -136,7 +136,7 @@ static UniValue jsonrpc_exec_batch(const UniValue& jbatch)
 //
 // JSON-RPC API endpoint.  Handles all JSON-RPC method calls.
 //
-void rpc_jsonrpc(evhttp_request *req, void *)
+static void rpc_jsonrpc(evhttp_request *req, void *)
 {
 	if (req->type == EVHTTP_REQ_GET) {
 		myapi_1_list_methods(req);
@@ -163,4 +163,11 @@ void rpc_jsonrpc(evhttp_request *req, void *)
 
 	send_json_response(req, jresp);
 };
+
+bool register_endpoints(struct evhttp* http)
+{
+	evhttp_set_cb(http, "/", rpc_home, nullptr);
+	evhttp_set_cb(http, "/rpc/1", rpc_jsonrpc, nullptr);
+	return true;
+}
 
