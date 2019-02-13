@@ -130,10 +130,13 @@ void rpc_home(evhttp_request *req, void *)
 
 	std::string body = rv.write(2) + "\n";
 
+	char clen_str[32];
+	snprintf(clen_str, sizeof(clen_str), "%zu", body.size());
 	evbuffer_add(OutBuf, body.c_str(), body.size());
 
 	struct evkeyvalq * kv = evhttp_request_get_output_headers(req);
 	evhttp_add_header(kv, "Content-Type", "application/json");
+	evhttp_add_header(kv, "Content-Length", clen_str);
 	evhttp_add_header(kv, "Server", "rpcsrv/" PACKAGE_VERSION);
 
 	evhttp_send_reply(req, HTTP_OK, "", OutBuf);
