@@ -11,6 +11,12 @@ exists to support a wide range of RPC methods, inputs and outputs.
 
 ## Building
 
+### Dependencies
+
+rpcsrv requires C++11, libevent 2 and on MACOSX, argp-standalone.
+
+### Compiling from source
+
 Building follows the familiar pattern:
 
 	git submodule update --init
