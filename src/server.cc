@@ -159,8 +159,10 @@ int main(int argc, char *argv[])
 	}
 
 	// HTTP server URI callbacks
+	evhttp_set_allowed_methods(Server.get(),
+		EVHTTP_REQ_GET | EVHTTP_REQ_POST);
 	evhttp_set_cb(Server.get(), "/", rpc_home, nullptr);
-	evhttp_set_cb(Server.get(), "/exec", rpc_exec, nullptr);
+	evhttp_set_cb(Server.get(), "/rpc/1", rpc_jsonrpc, nullptr);
 	evhttp_set_gencb(Server.get(), rpc_unknown, nullptr);
 
 	openlog("rpcsrv", LOG_PID, LOG_DAEMON);
