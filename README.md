@@ -6,8 +6,9 @@
 A C++ multi-threaded JSON-RPC server skeleton, in straight C++11.
 
 Currently implements two simple JSON-RPC methods, "ping" (always returns
-true) and "echo" (echoes params back as the result), but sufficient code
-exists to support a wide range of RPC methods, inputs and outputs.
+string "pong") and "echo" (echoes params back as the result), but
+sufficient code exists to support a wide range of RPC methods, inputs
+and outputs.
 
 ## Building
 

@@ -11,6 +11,7 @@ public:
 
 	UniValue execute(const UniValue& jreq);
 	UniValue list_methods();
+	const RpcCallInfo& call_info(const std::string& method);
 };
 
 #endif // __RPCSRV_MYAPI_1_H__

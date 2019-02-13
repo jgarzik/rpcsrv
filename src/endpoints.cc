@@ -18,6 +18,41 @@ unsigned int opt_json_indent = 0;
 
 vector<RpcApiInfo*> apiList;
 
+UniValue RpcApiInfo::list_method_helper(const map<string,RpcCallInfo>& callList)
+{
+	// return an array of JSON-RPC calls at this server
+	UniValue rv(UniValue::VARR);
+
+	for (auto it = callList.begin(); it != callList.end(); it++) {
+		const RpcCallInfo& mci = (*it).second;
+
+		UniValue onerpc(UniValue::VOBJ);
+		onerpc.pushKV("method", mci.method);
+		if (mci.params_array)
+			onerpc.pushKV("paramsReq", "array");
+		else if (mci.params_object)
+			onerpc.pushKV("paramsReq", "object");
+		rv.push_back(onerpc);
+	}
+
+	return rv;
+}
+
+UniValue RpcApiInfo::rpc_call_check(const UniValue& jreq,
+		    const std::string& method,
+		    const UniValue& params)
+{
+	const RpcCallInfo& mci = call_info(method);
+	if (mci.method.empty())
+		return jrpcErr(jreq, -32601, "method not found");
+
+	if ((mci.params_array && !params.isArray()) ||
+	    (mci.params_object && !params.isObject()))
+		return jrpcErr(jreq, -32602, "Invalid params");
+
+	return NullUniValue;
+}
+
 // generate a jsonrpc-2.0 standard error response
 UniValue jrpcErr(const UniValue& rpcreq, int code, string msg)
 {

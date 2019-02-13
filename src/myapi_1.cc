@@ -7,14 +7,7 @@
 
 using namespace std;
 
-class myapi_call_info {
-public:
-	string		method;
-	bool		params_array;
-	bool		params_object;
-};
-
-map<string,myapi_call_info> myapi_1_list = {
+map<string,RpcCallInfo> myapi_1_list = {
 	{ "ping", { "ping", } },
 	{ "echo", { "echo", } },
 };
@@ -52,22 +45,12 @@ static UniValue myapi_1_echo(const UniValue& jreq, const UniValue& params)
 //
 UniValue MyApiInfo::list_methods()
 {
-	// return an array of JSON-RPC calls at this server
-	UniValue rv(UniValue::VARR);
+	return list_method_helper(myapi_1_list);
+}
 
-	for (auto it = myapi_1_list.begin(); it != myapi_1_list.end(); it++) {
-		const myapi_call_info& mci = (*it).second;
-
-		UniValue onerpc(UniValue::VOBJ);
-		onerpc.pushKV("method", mci.method);
-		if (mci.params_array)
-			onerpc.pushKV("paramsReq", "array");
-		else if (mci.params_object)
-			onerpc.pushKV("paramsReq", "object");
-		rv.push_back(onerpc);
-	}
-
-	return rv;
+const RpcCallInfo& MyApiInfo::call_info(const std::string& method)
+{
+	return myapi_1_list[method];
 }
 
 //
@@ -78,13 +61,9 @@ UniValue MyApiInfo::execute(const UniValue& jreq)
 	const string& method = jreq["method"].getValStr();
 	const UniValue& params = jreq["params"];
 
-	if (!myapi_1_list.count(method))
-		return jrpcErr(jreq, -32601, "method not found");
-
-	const myapi_call_info& mci = myapi_1_list[method];
-	if ((mci.params_array && !params.isArray()) ||
-	    (mci.params_object && !params.isObject()))
-		return jrpcErr(jreq, -32602, "Invalid params");
+	UniValue uret = rpc_call_check(jreq, method, params);
+	if (!uret.isNull())
+		return uret;
 
 	if (method == "ping")
 		return myapi_1_ping(jreq, params);

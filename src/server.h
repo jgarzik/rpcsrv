@@ -2,8 +2,16 @@
 #define __RPCSRV_SERVER_H__
 
 #include <string>
+#include <map>
 #include <event2/http.h>
 #include <univalue.h>
+
+class RpcCallInfo {
+public:
+        std::string	method;
+        bool            params_array;
+        bool            params_object;
+};
 
 class RpcApiInfo {
 public:
@@ -19,6 +27,12 @@ public:
 
 	virtual UniValue execute(const UniValue& jreq) = 0;
 	virtual UniValue list_methods() = 0;
+	virtual const RpcCallInfo& call_info(const std::string& method) = 0;
+
+	UniValue rpc_call_check(const UniValue& jreq,
+                    const std::string& method,
+                    const UniValue& params);
+	UniValue list_method_helper(const std::map<std::string,RpcCallInfo>& callList);
 };
 
 extern unsigned int opt_json_indent;
