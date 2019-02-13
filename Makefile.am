@@ -1,5 +1,5 @@
 
-AM_CPPFLAGS = $(PTHREAD_CFLAGS) -I./univalue/include
+AM_CPPFLAGS = $(PTHREAD_CFLAGS) -I$(srcdir)/univalue/include
 
 SUBDIRS = univalue
 
