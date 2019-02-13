@@ -17,22 +17,25 @@ dnl You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software
 dnl Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-AC_INIT(rpcsrv, 0.1git, [Jeff Garzik <jgarzik@pobox.com>])
-AC_PREREQ(2.52)
-AC_CONFIG_SRCDIR([main.cc])
-AM_INIT_AUTOMAKE([gnu])
-AH_TOP([#ifndef __RPCSRV_CONFIG_H__
-#define __RPCSRV_CONFIG_H__])
-AH_BOTTOM([#endif /* __RPCSRV_CONFIG_H__ */])
+AC_PREREQ(2.60)
+AC_INIT(rpcsrv, 0.1.0, [Jeff Garzik <jgarzik@pobox.com>])
+AC_CONFIG_SRCDIR([src/rpcsrv.cc])
 AC_CONFIG_HEADERS([rpcsrv-config.h])
+AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_MACRO_DIR([build-aux/m4])
+AX_SUBDIRS_CONFIGURE([univalue], [--disable-shared])
 
-dnl Make sure anyone changing configure.ac/Makefile.am has a clue
-AM_MAINTAINER_MODE
+AC_CANONICAL_HOST
+
+AM_INIT_AUTOMAKE([subdir-objects foreign])
+AM_MAINTAINER_MODE([enable])
 
 dnl Checks for programs
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
+dnl Require C++11 compiler (no GNU extensions)
+AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory], [nodefault])
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -45,18 +48,11 @@ AC_TYPE_PID_T
 dnl -----------------------------
 dnl Checks for required libraries
 dnl -----------------------------
-
-AX_PTHREAD
-AX_CHECK_OPENSSL
-AX_BOOST_BASE(1.37.0)
-AX_BOOST_SYSTEM
-AX_BOOST_THREAD
-AX_BOOST_DATE_TIME
-AX_BOOST_PROGRAM_OPTIONS
-
 dnl AC_CHECK_LIB(gssrpc, gssrpc_svc_register, GSSRPC_LIBS=-lgssrpc, exit 1)
 
-dnl AC_CHECK_LIB(argp, argp_parse, ARGP_LIBS=-largp)
+AC_CHECK_LIB(argp, argp_parse, ARGP_LIBS=-largp)
+
+AC_LANG(C++)
 
 dnl -------------------------------------
 dnl Checks for optional library functions
@@ -74,7 +70,8 @@ dnl --------------------------
 dnl AC_SUBST(GSSRPC_LIBS)
 dnl AC_SUBST(DB4_LIBS)
 dnl AC_SUBST(EVENT_LIBS)
-dnl AC_SUBST(ARGP_LIBS)
+AC_SUBST(ARGP_LIBS)
 
-AC_CONFIG_FILES([json/Makefile Makefile])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
+

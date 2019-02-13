@@ -1,0 +1,3 @@
+[submodule "univalue"]
+	path = univalue
+	url = https://github.com/jgarzik/univalue
