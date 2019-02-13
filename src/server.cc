@@ -81,13 +81,14 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			} 
 			fclose(f);
 		}
-		break;
 
 		if (!progCfg.read(body)) {
 			fprintf(stderr, "Invalid JSON configuration file %s\n",
 				arg);
 			return ARGP_ERR_UNKNOWN;
 		}
+
+		break;
 	}
 
 	case 'p':
@@ -137,10 +138,28 @@ static void shutdown_signal(int signo)
 	event_base_loopbreak(eb);
 }
 
+static bool apply_json_config()
+{
+	if (progCfg.exists("daemon"))
+		opt_daemon = progCfg["daemon"].get_bool();
+	if (progCfg.exists("json-indent"))
+		opt_json_indent = progCfg["json-indent"].get_int();
+	if (progCfg.exists("listen-port"))
+		listenPort = progCfg["listen-port"].get_int();
+	if (progCfg.exists("listen-addr"))
+		listenAddr = progCfg["listen-addr"].get_str();
+
+	return true;
+}
+
 int main(int argc, char *argv[])
 {
 	// Parse command line
 	if (argp_parse(&argp, argc, argv, 0, NULL, NULL))
+		return EXIT_FAILURE;
+
+	// apply JSON config
+	if (!apply_json_config())
 		return EXIT_FAILURE;
 
 	// Init libevent

@@ -14,6 +14,7 @@
 using namespace std;
 
 static const size_t MAX_HTTP_BODY = 16 * 1000 * 1000;
+unsigned int opt_json_indent = 0;
 
 // generate a jsonrpc-2.0 standard error response
 UniValue jrpcErr(const UniValue& rpcreq, int code, string msg)
@@ -69,7 +70,7 @@ void send_json_response(evhttp_request *req, const UniValue& rv)
 	if (!OutBuf)
 		return;
 
-	std::string body = rv.write(2) + "\n";
+	std::string body = rv.write(opt_json_indent) + "\n";
 
 	char clen_str[32];
 	snprintf(clen_str, sizeof(clen_str), "%zu", body.size());
