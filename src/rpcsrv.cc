@@ -12,6 +12,9 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <event2/event.h>
+#include <event2/buffer.h>
+#include <event2/http.h>
+#include <univalue.h>
 #include "util.h"
 
 using namespace std;
@@ -87,6 +90,127 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 
 static struct argp argp = { options, parse_opt, NULL, doc };
 
+void rpc_home(evhttp_request *req, void *)
+{
+	auto *OutBuf = evhttp_request_get_output_buffer(req);
+	if (!OutBuf)
+		return;
+
+	UniValue rv(UniValue::VARR);
+
+	UniValue api_obj(UniValue::VOBJ);
+	api_obj.pushKV("name", "rpcsrv/1");		// service ora, ver 1
+
+	rv.push_back(api_obj);
+
+	std::string body = rv.write(2) + "\n";
+
+	evbuffer_add(OutBuf, body.c_str(), body.size());
+
+	struct evkeyvalq * kv = evhttp_request_get_output_headers(req);
+	evhttp_add_header(kv, "Content-Type", "application/json");
+	evhttp_add_header(kv, "Server", "rpcsrv/" PACKAGE_VERSION);
+
+	evhttp_send_reply(req, HTTP_OK, "", OutBuf);
+};
+
+static bool read_http_input(evhttp_request *req, string& body)
+{
+	// absorb HTTP body input
+	struct evbuffer *buf = evhttp_request_get_input_buffer(req);
+
+	size_t buflen;
+	while ((buflen = evbuffer_get_length(buf))) {
+		if ((body.size() + buflen) > MAX_HTTP_BODY) {
+			evhttp_send_error(req, 400, "input too large");
+			return false;
+		}
+
+		vector<unsigned char> tmp_buf(buflen);
+		int n = evbuffer_remove(buf, &tmp_buf[0], buflen);
+		if (n > 0)
+			body.append((const char *) &tmp_buf[0], n);
+	}
+
+	return true;
+}
+
+UniValue jrpcErr(const UniValue& rpcreq, int code, string msg)
+{
+	UniValue errobj(UniValue::VOBJ);
+	errobj.pushKV("code", code);
+	errobj.pushKV("message", msg);
+
+	UniValue rpcresp(UniValue::VOBJ);
+	rpcresp.pushKV("jsonrpc", "2.0");
+	rpcresp.pushKV("error", errobj);
+	rpcresp.pushKV("id", rpcreq["id"]);
+
+	return rpcresp;
+}
+
+UniValue jrpcOk(const UniValue& rpcreq, const UniValue& result)
+{
+	UniValue rpcresp(UniValue::VOBJ);
+	rpcresp.pushKV("jsonrpc", "2.0");
+	rpcresp.pushKV("result", result);
+	rpcresp.pushKV("id", rpcreq["id"]);
+
+	return rpcresp;
+}
+
+void rpc_exec(evhttp_request *req, void *)
+{
+	// absorb HTTP body input
+	string body;
+	if (!read_http_input(req, body))
+		return;
+
+	// decode json-rpc msg request
+	UniValue jrpc;
+	UniValue jresp;
+	if (!jrpc.read(body)) {
+		jresp = jrpcErr(jrpc, -32700, "JSON parse error");
+	}
+
+	else if (!jrpc.isObject() ||
+	    !jrpc.exists("method") ||
+	    !jrpc["method"].isStr()) {
+		jresp = jrpcErr(jrpc, -32600, "Invalid request object");
+	}
+
+	else {
+		jresp = jrpcOk(jrpc, jrpc["params"]);
+	}
+
+	body = jresp.write(2) + "\n";
+
+	char clen_str[32];
+	snprintf(clen_str, sizeof(clen_str), "%zu", body.size());
+
+	// HTTP headers
+	struct evkeyvalq * kv = evhttp_request_get_output_headers(req);
+	evhttp_add_header(kv, "Content-Type", "application/json");
+	evhttp_add_header(kv, "Content-Length", clen_str);
+	evhttp_add_header(kv, "Server", "rpcsrv/" PACKAGE_VERSION);
+
+	// HTTP body
+	std::unique_ptr<evbuffer, decltype(&evbuffer_free)> OutBuf(evbuffer_new(), &evbuffer_free);
+	evbuffer_add(OutBuf.get(), body.c_str(), body.size());
+
+	// finalize, send everything
+	evhttp_send_reply(req, HTTP_OK, "", OutBuf.get());
+};
+
+void rpc_unknown(evhttp_request *req, void *)
+{
+	auto *OutBuf = evhttp_request_get_output_buffer(req);
+	if (!OutBuf)
+		return;
+	evbuffer_add_printf(OutBuf, "<html><body><center><h1>404 not found</h1></center></body></html>");
+	evhttp_send_error(req, 404, "not found");
+};
+
 static void pid_file_cleanup(void)
 {
 	if (opt_pid_file && *opt_pid_file)
@@ -110,6 +234,19 @@ int main(int argc, char *argv[])
 		std::cerr << "Failed to init libevent." << std::endl;
 		return EXIT_FAILURE;
 	}
+
+	// Init HTTP server
+	std::unique_ptr<evhttp, decltype(&evhttp_free)> Server(evhttp_new(eb), &evhttp_free);
+	if ((!Server) ||
+	    (evhttp_bind_socket(Server.get(), listenAddr.c_str(), listenPort) < 0)) {
+		std::cerr << "Failed to create & bind http server." << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	// HTTP server URI callbacks
+	evhttp_set_cb(Server.get(), "/", rpc_home, nullptr);
+	evhttp_set_cb(Server.get(), "/exec", rpc_exec, nullptr);
+	evhttp_set_gencb(Server.get(), rpc_unknown, nullptr);
 
 	openlog("rpcsrv", LOG_PID, LOG_DAEMON);
 
