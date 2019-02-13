@@ -19,12 +19,22 @@ env:
     - RUN_TESTS=true
     - BASE_OUTDIR=$TRAVIS_BUILD_DIR/out
 
+cache:
+  apt: true
+
+addons:
+  apt:
+    packages:
+      - pkg-config
+      - libevent-dev
+
 before_install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
 
 install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gettext; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install argp-standalone; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install libevent; fi
 
 before_script:
   - if [ -n "$USE_SHELL" ]; then export CONFIG_SHELL="$USE_SHELL"; fi
