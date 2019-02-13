@@ -50,7 +50,7 @@ static UniValue myapi_1_echo(const UniValue& jreq, const UniValue& params)
 //
 // reflection: describe all RPC methods supported by myapi v1
 //
-void myapi_1_list_methods(evhttp_request *req)
+UniValue MyApiInfo::list_methods()
 {
 	// return an array of JSON-RPC calls at this server
 	UniValue rv(UniValue::VARR);
@@ -67,13 +67,13 @@ void myapi_1_list_methods(evhttp_request *req)
 		rv.push_back(onerpc);
 	}
 
-	send_json_response(req, rv);
+	return rv;
 }
 
 //
 // dispatch JSON-RPC request to myapi v1 RPCs
 //
-UniValue myapi_1_execute(const UniValue& jreq)
+UniValue MyApiInfo::execute(const UniValue& jreq)
 {
 	const string& method = jreq["method"].getValStr();
 	const UniValue& params = jreq["params"];

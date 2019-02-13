@@ -16,6 +16,8 @@ using namespace std;
 static const size_t MAX_HTTP_BODY = 16 * 1000 * 1000;
 unsigned int opt_json_indent = 0;
 
+vector<RpcApiInfo*> apiList;
+
 // generate a jsonrpc-2.0 standard error response
 UniValue jrpcErr(const UniValue& rpcreq, int code, string msg)
 {
@@ -96,28 +98,32 @@ static void rpc_home(evhttp_request *req, void *)
 	// return an array of services at this server
 	UniValue rv(UniValue::VARR);
 
-	// we serve one (1) API at this server
-	UniValue myapi_obj(UniValue::VOBJ);
-	myapi_obj.pushKV("name", "myapi/1"); // our service, v1
-	myapi_obj.pushKV("timestamp", (int64_t)time(nullptr));
-	myapi_obj.pushKV("endpoint", "/rpc/1");
+	for (auto it = apiList.begin(); it != apiList.end(); it++) {
+		RpcApiInfo *ap = *it;
 
-	rv.push_back(myapi_obj);
+		string serviceVersion = ap->name + "/" + ap->version;
+
+		UniValue api_obj(UniValue::VOBJ);
+		api_obj.pushKV("name", serviceVersion);
+		api_obj.pushKV("endpoint", ap->uripath);
+
+		rv.push_back(api_obj);
+	}
 
 	send_json_response(req, rv);
 };
 
-static UniValue jsonrpc_exec_1(const UniValue& jrpc)
+static UniValue jsonrpc_exec_1(RpcApiInfo *ap, const UniValue& jrpc)
 {
 	if (!jrpc.isObject() ||
 	    !jrpc.exists("method") ||
 	    !jrpc["method"].isStr())
 		return jrpcErr(jrpc, -32600, "Invalid request object");
 
-	return myapi_1_execute(jrpc);
+	return ap->execute(jrpc);
 }
 
-static UniValue jsonrpc_exec_batch(const UniValue& jbatch)
+static UniValue jsonrpc_exec_batch(RpcApiInfo *ap, const UniValue& jbatch)
 {
 	UniValue result(UniValue::VARR);
 
@@ -125,7 +131,7 @@ static UniValue jsonrpc_exec_batch(const UniValue& jbatch)
 	for (unsigned int i = 0; i < batchsz; i++) {
 		const UniValue& jrpc = jbatch[i];
 
-		result.push_back(jsonrpc_exec_1(jrpc));
+		result.push_back(jsonrpc_exec_1(ap, jrpc));
 	}
 
 	return result;
@@ -136,10 +142,13 @@ static UniValue jsonrpc_exec_batch(const UniValue& jbatch)
 //
 // JSON-RPC API endpoint.  Handles all JSON-RPC method calls.
 //
-static void rpc_jsonrpc(evhttp_request *req, void *)
+static void rpc_jsonrpc(evhttp_request *req, void *opaque)
 {
+	RpcApiInfo *ap = (RpcApiInfo *) opaque;
+
 	if (req->type == EVHTTP_REQ_GET) {
-		myapi_1_list_methods(req);
+		UniValue rv = ap->list_methods();
+		send_json_response(req, rv);
 		return;
 	}
 	assert(req->type == EVHTTP_REQ_POST);
@@ -156,18 +165,27 @@ static void rpc_jsonrpc(evhttp_request *req, void *)
 		jresp = jrpcErr(jrpc, -32700, "JSON parse error");
 
 	else if (jrpc.isArray())
-		jresp = jsonrpc_exec_batch(jrpc);
+		jresp = jsonrpc_exec_batch(ap, jrpc);
 
 	else
-		jresp = jsonrpc_exec_1(jrpc);
+		jresp = jsonrpc_exec_1(ap, jrpc);
 
 	send_json_response(req, jresp);
 };
 
 bool register_endpoints(struct evhttp* http)
 {
+	RpcApiInfo *ap = new MyApiInfo();
+	assert(ap != nullptr);
+
+	apiList.push_back(ap);
+
 	evhttp_set_cb(http, "/", rpc_home, nullptr);
-	evhttp_set_cb(http, "/rpc/1", rpc_jsonrpc, nullptr);
+
+	for (auto it = apiList.begin(); it != apiList.end(); it++) {
+		RpcApiInfo *ap = *it;
+		evhttp_set_cb(http, ap->uripath.c_str(), rpc_jsonrpc, ap);
+	}
 	return true;
 }
 

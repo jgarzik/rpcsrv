@@ -3,8 +3,14 @@
 
 #include <univalue.h>
 #include <event2/http.h>
+#include "server.h"
 
-extern UniValue myapi_1_execute(const UniValue& jreq);
-extern void myapi_1_list_methods(evhttp_request *req);
+class MyApiInfo : public RpcApiInfo {
+public:
+	MyApiInfo() : RpcApiInfo("myapi", "1", "/rpc/1") {}
+
+	UniValue execute(const UniValue& jreq);
+	UniValue list_methods();
+};
 
 #endif // __RPCSRV_MYAPI_1_H__
