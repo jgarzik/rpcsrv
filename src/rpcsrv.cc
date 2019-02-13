@@ -8,10 +8,12 @@
 
 #include <string>
 #include <argp.h>
+#include <memory>
 #include <iostream>
 #include <cstdio>
 #include <unistd.h>
 #include <syslog.h>
+#include <signal.h>
 #include <event2/event.h>
 #include <event2/buffer.h>
 #include <event2/http.h>
