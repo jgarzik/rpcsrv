@@ -4,11 +4,14 @@ AM_CPPFLAGS = $(PTHREAD_CFLAGS)
 sbin_PROGRAMS = rpcsrvd
 
 rpcsrvd_SOURCES = \
-	src/rpcsrv.cc
+	src/rpcsrv.cc \
+	src/util.h src/util.cc
 
 rpcsrvd_LDFLAGS = $(PTHREAD_CFLAGS) $(OPENSSL_LDFLAGS) -L./univalue/lib
 rpcsrvd_LDADD = \
-	-lunivalue
+	-lunivalue \
 	$(PTHREAD_LIBS)		\
+	$(ARGP_LIBS)		\
+	$(EVENT_LIBS)		\
 	$(OPENSSL_LIBS)
 

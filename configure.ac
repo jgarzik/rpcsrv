@@ -51,6 +51,8 @@ dnl -----------------------------
 dnl AC_CHECK_LIB(gssrpc, gssrpc_svc_register, GSSRPC_LIBS=-lgssrpc, exit 1)
 
 AC_CHECK_LIB(argp, argp_parse, ARGP_LIBS=-largp)
+AC_CHECK_HEADER([event2/event.h],, AC_MSG_ERROR(libevent headers missing),)
+AC_CHECK_LIB([event],[main],EVENT_LIBS=-levent,AC_MSG_ERROR(libevent missing))
 
 AC_LANG(C++)
 
@@ -69,7 +71,7 @@ dnl --------------------------
 
 dnl AC_SUBST(GSSRPC_LIBS)
 dnl AC_SUBST(DB4_LIBS)
-dnl AC_SUBST(EVENT_LIBS)
+AC_SUBST(EVENT_LIBS)
 AC_SUBST(ARGP_LIBS)
 
 AC_CONFIG_FILES([Makefile])
