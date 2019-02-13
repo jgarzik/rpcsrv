@@ -11,6 +11,7 @@ sbin_PROGRAMS = rpcsrvd
 
 rpcsrvd_SOURCES = \
 	src/endpoints.cc \
+	src/myapi_1.h src/myapi_1.cc \
 	src/server.h src/server.cc \
 	src/util.h src/util.cc
 
