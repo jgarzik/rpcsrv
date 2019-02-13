@@ -1,0 +1,40 @@
+
+language: cpp
+
+compiler:
+  - clang
+  - gcc
+
+os:
+  - linux
+#  - osx
+
+dist: xenial
+
+sudo: false
+
+env:
+  global:
+    - MAKEJOBS=-j3
+    - RUN_TESTS=true
+    - BASE_OUTDIR=$TRAVIS_BUILD_DIR/out
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
+
+install:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gettext; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install argp-standalone; fi
+
+before_script:
+  - if [ -n "$USE_SHELL" ]; then export CONFIG_SHELL="$USE_SHELL"; fi
+  - test -n "$USE_SHELL" && eval '"$USE_SHELL" -c "./autogen.sh"' || ./autogen.sh
+
+script:
+  - OUTDIR=$BASE_OUTDIR/$TRAVIS_PULL_REQUEST/$TRAVIS_JOB_NUMBER-$HOST
+  - RPCSRV_CONFIG_ALL="--prefix=$TRAVIS_BUILD_DIR/depends/$HOST --bindir=$OUTDIR/bin --libdir=$OUTDIR/lib"
+  - CFLAGS="-O3 -Wall -g" CXXFLAGS="-O3 -Wall -g" ./configure --cache-file=config.cache $RPCSRV_CONFIG_ALL $RPCSRV_CONFIG || ( cat config.log && false)
+  - make -s $MAKEJOBS $GOAL || ( echo "Build failure. Verbose build follows." && make $GOAL ; false )
+  - export LD_LIBRARY_PATH=$TRAVIS_BUILD_DIR/depends/$HOST/lib
+  - if [ "$RUN_TESTS" = "true" ]; then make $MAKEJOBS distcheck; fi
+
