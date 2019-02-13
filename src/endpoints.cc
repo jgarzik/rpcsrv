@@ -184,6 +184,30 @@ void rpc_home(evhttp_request *req, void *)
 	send_json_response(req, rv);
 };
 
+static UniValue jsonrpc_exec_1(const UniValue& jrpc)
+{
+	if (!jrpc.isObject() ||
+	    !jrpc.exists("method") ||
+	    !jrpc["method"].isStr())
+		return jrpcErr(jrpc, -32600, "Invalid request object");
+
+	return myapi_1_execute(jrpc);
+}
+
+static UniValue jsonrpc_exec_batch(const UniValue& jbatch)
+{
+	UniValue result(UniValue::VARR);
+
+	size_t batchsz = jbatch.size();
+	for (unsigned int i = 0; i < batchsz; i++) {
+		const UniValue& jrpc = jbatch[i];
+
+		result.push_back(jsonrpc_exec_1(jrpc));
+	}
+
+	return result;
+}
+
 //
 // HTTP endpoint: GET /rpc/1 (list methods) or POST /rpc/1 (execute RPC)
 //
@@ -205,19 +229,14 @@ void rpc_jsonrpc(evhttp_request *req, void *)
 	// decode json-rpc msg request
 	UniValue jrpc;
 	UniValue jresp;
-	if (!jrpc.read(body)) {
+	if (!jrpc.read(body))
 		jresp = jrpcErr(jrpc, -32700, "JSON parse error");
-	}
 
-	else if (!jrpc.isObject() ||
-	    !jrpc.exists("method") ||
-	    !jrpc["method"].isStr()) {
-		jresp = jrpcErr(jrpc, -32600, "Invalid request object");
-	}
+	else if (jrpc.isArray())
+		jresp = jsonrpc_exec_batch(jrpc);
 
-	else {
-		jresp = myapi_1_execute(jrpc);
-	}
+	else
+		jresp = jsonrpc_exec_1(jrpc);
 
 	send_json_response(req, jresp);
 };
