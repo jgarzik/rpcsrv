@@ -3,7 +3,7 @@
 
 ## Introduction
 
-A C++ multi-threaded JSON-RPC server skeleton, in straight C++11.
+A C++ JSON-RPC server skeleton, in straight C++11.
 
 Currently implements two simple JSON-RPC methods, "ping" (always returns
 string "pong") and "echo" (echoes params back as the result), but
