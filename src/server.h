@@ -6,18 +6,24 @@
 #include <event2/http.h>
 #include <univalue.h>
 
+//
+// Class describes a single JSON-RPC method call
+//
 class RpcCallInfo {
 public:
-        std::string	method;
-        bool            params_array;
-        bool            params_object;
+	std::string	method;		// JSON-RPC method name
+	bool		params_array;	// require params to be array?
+	bool		params_object;	// require params to be object?
 };
 
+//
+// API service virtual base class
+//
 class RpcApiInfo {
 public:
-	std::string	name;
-	std::string	version;
-	std::string	uripath;
+	std::string	name;		// service name
+	std::string	version;	// service version
+	std::string	uripath;	// service local URI path
 
 	RpcApiInfo() {}
 	RpcApiInfo(const std::string& name_, const std::string& version_,
@@ -25,10 +31,12 @@ public:
 						  version(version_),
 						  uripath(uripath_) {}
 
+	// API services implement these
 	virtual UniValue execute(const UniValue& jreq) = 0;
 	virtual UniValue list_methods() = 0;
 	virtual const RpcCallInfo& call_info(const std::string& method) = 0;
 
+	// helpers for API services
 	UniValue rpc_call_check(const UniValue& jreq,
                     const std::string& method,
                     const UniValue& params);
